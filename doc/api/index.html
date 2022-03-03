@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="generator" content="made with love by dartdoc 4.1.0">
+  <meta name="description" content="pip_services3_postgres API docs, for the Dart programming language.">
+  <title>pip_services3_postgres - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+
+  
+</head>
+
+
+<body data-base-href=""
+      data-using-base-href="false">
+
+<div id="overlay-under-drawer"></div>
+
+<header id="title">
+  <button id="sidenav-left-toggle" type="button">&nbsp;</button>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/pip-services3-dart/pip-services3-postgres-dart">pip_services3_postgres package</a></li>
+  </ol>
+  <div class="self-name">pip_services3_postgres</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+
+<main>
+
+
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="img-srchttpsuploads-sslwebflowcom5ea5d3315186cf5ec60c3ee45edf1c94ce4c859f2b188094_logosvg-altpipservices-logo-width200-br-postgresql-components-for-pipservice-in-dart"><img src="https://uploads-ssl.webflow.com/5ea5d3315186cf5ec60c3ee4/5edf1c94ce4c859f2b188094_logo.svg" alt="Pip.Services Logo" width="200"> &lt;br/&gt; PostgreSQL components for Pip.Service in Dart</h1>
+<p>This module is a part of the <a href="http://pipservices.org">Pip.Services</a> polyglot microservices toolkit. It provides a set of components to implement PostgreSQL persistence.</p>
+<p>The module contains the following packages:</p>
+<ul>
+<li><strong>Build</strong> - Factory to create PostreSQL persistence components.</li>
+<li><strong>Connect</strong> - Connection component to configure PostgreSQL connection to database.</li>
+<li><strong>Persistence</strong> - abstract persistence components to perform basic CRUD operations.</li>
+</ul>
+<p><a name="links"></a> Quick links:</p>
+<ul>
+<li><a href="http://docs.pipservices.org/toolkit/getting_started/configurations/">Configuration</a></li>
+<li><a href="https://pub.dev/documentation/pip_services3_postgres/latest/pip_services3_postgres/pip_services3_postgres-library.html">API Reference</a></li>
+<li><a href="CHANGELOG.md">Change Log</a></li>
+<li><a href="http://docs.pipservices.org/get_help/">Get Help</a></li>
+<li><a href="http://docs.pipservices.org/toolkit/contribute/">Contribute</a></li>
+</ul>
+<h2 id="use">Use</h2>
+<p>Add this to your package's pubspec.yaml file:</p>
+<pre class="language-yaml"><code class="language-yaml">dependencies:
+  pip_services3_postgres: version
+</code></pre>
+<p>As an example, lets create persistence for the following data object.</p>
+<pre class="language-dart"><code class="language-dart">import 'package:pip_services3_commons/pip_services3_commons.dart';
+
+class MyObject implements IStringIdentifiable, ICloneable {
+  @override
+  String? id;
+  String? key;
+  String? content;
+
+  MyObject();
+
+  MyObject.from(this.id, this.key, this.content);
+
+  Map&lt;String, dynamic&gt; toJson() {
+    return &lt;String, dynamic&gt;{'id': id, 'key': key, 'content': content};
+  }
+
+  void fromJson(Map&lt;String, dynamic&gt; json) {
+    id = json['id'];
+    key = json['key'];
+    content = json['content'];
+  }
+
+  @override
+  MyObject clone() {
+    return MyObject.from(id, key, content);
+  }
+}
+</code></pre>
+<p>The persistence component shall implement the following interface with a basic set of CRUD operations.</p>
+<pre class="language-dart"><code class="language-dart">abstract class IMyPersistence {
+  Future&lt;DataPage&lt;MyObject&gt;&gt; getPageByFilter(
+      String? correlationId, FilterParams? filter, PagingParams? paging);
+
+  Future&lt;MyObject?&gt; getOneById(String? correlationId, String id);
+
+  Future&lt;MyObject?&gt; getOneByKey(String? correlationId, String key);
+
+  Future&lt;MyObject?&gt; create(String? correlationId, MyObject? item);
+
+  Future&lt;MyObject?&gt; update(String? correlationId, MyObject? item);
+
+  Future&lt;MyObject?&gt; set(String? correlationId, MyObject? item);
+
+  Future&lt;MyObject?&gt; deleteById(String? correlationId, String? id);
+}
+</code></pre>
+<p>To implement postgresql persistence component you shall inherit <code>IdentifiablePostgresPersistence</code>. 
+Most CRUD operations will come from the base class. You only need to override <code>getPageByFilter</code> method with a custom filter function.
+And implement a <code>getOneByKey</code> custom persistence method that doesn't exist in the base class.</p>
+<pre class="language-dart"><code class="language-dart">class MyPostgresPersistence
+    extends IdentifiablePostgresPersistence&lt;MyObject, String&gt; {
+  MyPostgresPersistence() : super('myobjects', null) {
+    ensureSchema_(
+        "CREATE TABLE myobjects (id VARCHAR(32) PRIMARY KEY, key VARCHAR(50), content VARCHAR(255))");
+    ensureIndex_("myobjects_key", {'key': 1}, {'unique': true});
+  }
+
+  @override
+  void defineSchema_() {
+    // pass
+  }
+
+  String? _composeFilter(FilterParams? filter) {
+    filter = filter ?? FilterParams();
+
+    var criteria = [];
+
+    var id = filter.getAsNullableString('id');
+    if (id != null) criteria.add("id='" + id + "'");
+
+    var tempIds = filter.getAsNullableString("ids");
+    if (tempIds != null) {
+      var ids = tempIds.split(",");
+      criteria.add("id IN ('" + ids.join("','") + "')");
+    }
+
+    var key = filter.getAsNullableString("key");
+    if (key != null) criteria.add("key='" + key + "'");
+
+    return criteria.length &gt; 0 ? criteria.join(" AND ") : null;
+  }
+
+  Future&lt;DataPage&lt;MyObject&gt;&gt; getPageByFilter(
+      String? correlationId, FilterParams? filter, PagingParams? paging) {
+    return super.getPageByFilter_(
+        correlationId, _composeFilter(filter), paging, null, null);
+  }
+
+  Future&lt;MyObject?&gt; getOneByKey(String? correlationId, String key) async {
+    var query =
+        "SELECT * FROM " + this.quotedTableName_() + " WHERE \"key\"=@1";
+    var params = {'1': key};
+
+    var res = await client_!.query(query, substitutionValues: params);
+
+    var resValues = res.isNotEmpty ? res.first[0][1] : null;
+
+    var item = this.convertToPublic_(resValues);
+
+    if (item == null)
+      this.logger_.trace(correlationId, "Nothing found from %s with key = %s",
+          [this.tableName_, key]);
+    else
+      this.logger_.trace(correlationId, "Retrieved from %s with key = %s",
+          [this.tableName_, key]);
+
+    item = this.convertToPublic_(item);
+    return item;
+  }
+}
+</code></pre>
+<p>Alternatively you can store data in non-relational format using <code>IdentificableJsonPostgresPersistence</code>.
+It stores data in tables with two columns - <code>id</code> with unique object id and <code>data</code> with object data serialized as JSON.
+To access data fields you shall use <code>data-&gt;'field'</code> expression or <code>data-&gt;&gt;'field'</code> expression for string values.</p>
+<pre class="language-dart"><code class="language-dart">class MyPostgresJsonPersistence
+    extends IdentifiableJsonPostgresPersistence&lt;MyObject, String&gt; {
+  MyPostgresJsonPersistence() : super('myobjects_json', null) {
+    clearSchema();
+    ensureTable_(idType: "VARCHAR(32)", dataType: "JSONB");
+    ensureIndex_(this.tableName_! + '_json_key', {"(data-&gt;&gt;'key')": 1},
+        {'unique': true});
+  }
+
+  @override
+  void defineSchema_() {
+    // pass
+  }
+
+  String? _composeFilter(FilterParams? filter) {
+    filter = filter ?? FilterParams();
+
+    var criteria = [];
+
+    var id = filter.getAsNullableString('id');
+    if (id != null) criteria.add("data-&gt;&gt;'id'='" + id + "'");
+
+    var tempIds = filter.getAsNullableString("ids");
+    if (tempIds != null) {
+      var ids = tempIds.split(",");
+      criteria.add("data-&gt;&gt;'id' IN ('" + ids.join("','") + "')");
+    }
+
+    var key = filter.getAsNullableString("key");
+    if (key != null) criteria.add("data-&gt;&gt;'key'='" + key + "'");
+
+    return criteria.length &gt; 0 ? criteria.join(" AND ") : null;
+  }
+
+  Future&lt;DataPage&lt;MyObject&gt;&gt; getPageByFilter(
+      String? correlationId, FilterParams? filter, PagingParams? paging) {
+    return super.getPageByFilter_(
+        correlationId, _composeFilter(filter), paging, 'id', null);
+  }
+
+  Future&lt;MyObject?&gt; getOneByKey(String? correlationId, String key) async {
+    var query =
+        "SELECT * FROM " + this.quotedTableName_() + " WHERE data-&gt;&gt;'key'=@1";
+    var params = {'1': key};
+
+    var res = await client_!.query(query, substitutionValues: params);
+
+    var resValues = res.isNotEmpty ? res.first[0][1] : null;
+
+    var item = this.convertToPublic_(resValues);
+
+    if (item == null)
+      this.logger_.trace(correlationId, "Nothing found from %s with key = %s",
+          [this.tableName_, key]);
+    else
+      this.logger_.trace(correlationId, "Retrieved from %s with key = %s",
+          [this.tableName_, key]);
+
+    item = this.convertToPublic_(item);
+    return item;
+  }
+}
+</code></pre>
+<p>Configuration for your microservice that includes postgresql persistence may look the following way.</p>
+<pre class="language-yaml"><code class="language-yaml">...
+{{#if POSTGRES_ENABLED}}
+- descriptor: pip-services:connection:postgres:con1:1.0
+  connection:
+    uri: {{{POSTGRES_SERVICE_URI}}}
+    host: {{{POSTGRES_SERVICE_HOST}}}{{#unless POSTGRES_SERVICE_HOST}}localhost{{/unless}}
+    port: {{POSTGRES_SERVICE_PORT}}{{#unless POSTGRES_SERVICE_PORT}}5432{{/unless}}
+    database: {{POSTGRES_DB}}{{#unless POSTGRES_DB}}app{{/unless}}
+  credential:
+    username: {{POSTGRES_USER}}
+    password: {{POSTGRES_PASS}}
+    
+- descriptor: myservice:persistence:postgres:default:1.0
+  dependencies:
+    connection: pip-services:connection:postgres:con1:1.0
+  table: {{POSTGRES_TABLE}}{{#unless POSTGRES_TABLE}}myobjects{{/unless}}
+{{/if}}
+...
+</code></pre>
+<p>Now you can install package from the command line:</p>
+<pre class="language-bash"><code class="language-bash">pub get
+</code></pre>
+<h2 id="develop">Develop</h2>
+<p>For development you shall install the following prerequisites:</p>
+<ul>
+<li>Dart SDK 2</li>
+<li>Visual Studio Code or another IDE of your choice</li>
+<li>Docker</li>
+</ul>
+<p>Install dependencies:</p>
+<pre class="language-bash"><code class="language-bash">pub get
+</code></pre>
+<p>Run automated tests:</p>
+<pre class="language-bash"><code class="language-bash">pub run test
+</code></pre>
+<p>Generate API documentation:</p>
+<pre class="language-bash"><code class="language-bash">./docgen.ps1
+</code></pre>
+<p>Before committing changes run dockerized build and test as:</p>
+<pre class="language-bash"><code class="language-bash">./build.ps1
+./test.ps1
+./clear.ps1
+</code></pre>
+<h2 id="contacts">Contacts</h2>
+<p>The module is created and maintained by</p>
+<ul>
+<li><strong>Sergey Seroukhov</strong></li>
+<li><strong>Danil Prisiazhnyi</strong></li>
+</ul>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="pip_services3_postgres">
+  <span class="name"><a href="pip_services3_postgres/pip_services3_postgres-library.html">pip_services3_postgres</a></span> 
+
+</dt>
+<dd> 
+</dd>
+
+        </dl>
+      </section>
+
+  </div> <!-- /.main-content -->
+
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+  <li><a href="https://github.com/pip-services3-dart/pip-services3-postgres-dart">pip_services3_postgres package</a></li>
+</ol>
+
+
+    <h5 class="hidden-xs"><span class="package-name">pip_services3_postgres</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="pip_services3_postgres/pip_services3_postgres-library.html">pip_services3_postgres</a></li>
+</ol>
+
+  </div>
+
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+
+</main>
+
+<footer>
+  <span class="no-break">
+    pip_services3_postgres
+      1.0.0
+  </span>
+
+  
+</footer>
+
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/script.js?v1"></script>
+
+
+
+</body>
+
+</html>
+

@@ -1,0 +1,6 @@
+{
+    "name": "pip-services-postgres",
+    "registry": "pipdevs",
+    "version": "1.0.0",
+    "build": "0"
+}
