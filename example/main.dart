@@ -1,5 +1,5 @@
 import 'package:pip_services3_commons/pip_services3_commons.dart';
-import 'package:pip_services3_postgres/pip_services3_postgres_dart.dart';
+import 'package:pip_services3_postgres/pip_services3_postgres.dart';
 
 void main(List<String> args) async {
   var dbConfig = ConfigParams.fromTuples([
