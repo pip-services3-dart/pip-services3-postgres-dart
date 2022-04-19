@@ -6,7 +6,7 @@ services:
     image: postgres:latest
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: test
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: pip1
     ports:
       - "5432:5432"

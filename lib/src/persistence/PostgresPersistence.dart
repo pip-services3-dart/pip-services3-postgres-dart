@@ -670,8 +670,10 @@ class PostgresPersistence<T>
     logger_.trace(
         correlationId, "Retrieved %d from %s", [res.length, this.tableName_]);
 
-    var items =
-        res.toList().map((e) => convertToPublic_(e) as T).toList(); // todo
+    var items = res
+        .map((e) => convertToPublic_(Map<String, dynamic>.fromIterables(
+            res.columnDescriptions.map((e) => e.columnName), e.toList())) as T)
+        .toList();
     return items;
   }
 
@@ -696,9 +698,9 @@ class PostgresPersistence<T>
 
     res = await client_!.query(query);
 
-    var item = res.toList().isNotEmpty ? res.toList()[0] : null;
+    var mapItem = res.toList().isNotEmpty ? res.toList()[0] : null;
 
-    if (item == null)
+    if (mapItem == null)
       this.logger_.trace(
           correlationId, "Random item wasn't found from %s", [this.tableName_]);
     else
@@ -710,8 +712,8 @@ class PostgresPersistence<T>
             res.columnDescriptions.map((e) => e.columnName), res.first.toList())
         : null;
 
-    item = this.convertToPublic_(resValues);
-    return item as T;
+    var item = this.convertToPublic_(resValues);
+    return item as T?;
   }
 
   /// Creates a data item.
