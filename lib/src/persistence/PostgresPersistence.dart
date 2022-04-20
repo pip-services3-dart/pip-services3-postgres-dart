@@ -255,7 +255,7 @@ class PostgresPersistence<T>
     var builder = "CREATE";
     options = options ?? {};
 
-    if (options['unique']) {
+    if (options['unique'] != null) {
       builder += " UNIQUE";
     }
 
